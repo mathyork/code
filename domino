@@ -1,0 +1,75 @@
+# -*- coding: cp950 -*-
+from visual import *
+from math import *
+import numpy as np
+scene = display(center = (0,0,0), forward = (-1,-1,-1))
+
+number = 100
+space = 10
+energy_dec = 0.9
+dt = 0.001
+height = 12
+width = 1.5
+inital_angle = 0.3
+
+fake = 0
+i = 0
+floor = box(size=(300,1,5), pos=(-140,-0.5,0))
+domino = np.ndarray([number],dtype=box)
+p = np.ndarray([number],dtype=double)
+domino_number = 0
+while i < number:
+    
+    domino[i] = box(pos=(4.5-(space+width)*i,height/2.0,0),size=(width,height,3),color=color.red)
+    domino[i].mass = 1
+    domino[i].I = (domino[i].size.x**2+domino[i].size.y**2)*domino[i].mass/12 + (((0.5*domino[i].size.x)**2+(0.5*domino[i].size.y)**2)**0.5)*domino[i].mass
+    domino[i].v = 0
+    domino[i].a = 0
+    p[i] = 0
+    i += 1
+    domino_number += 1
+    
+s = space
+d = domino[0].size.x
+h = domino[0].size.y
+
+i = 0
+j = 0 #make the code run one time
+k = 0
+m = 0
+before_p = arcsin(s/h)
+
+domino[0].rotate(angle=inital_angle,axis=(0,0,1),origin=(4.5-width/2.0,0,0))
+p[0] += 0.3
+
+def rotate_gra(i):
+    domino[i].a = (4.5-(space+width)*i - domino[i].x) * 9.8 * domino[i].mass / domino[i].I
+    domino[i].v = domino[i].v + domino[i].a * dt
+    domino[i].rotate(angle=domino[i].v*dt,axis=(0,0,1),origin=(4.5-(space+width)*i-width/2.0,0,0))
+    p[i] += domino[i].v*dt
+    
+def rotate_pas(i):
+    before_p = p[i]
+    before_p = p[i+1] + arcsin(((s+d)*cos(p[i+1])-d)/h) - before_p
+    domino[i].rotate(angle=before_p,axis=(0,0,1),origin=(4.5-(space+width)*i-width/2.0,0,0))
+    p[i] += before_p
+
+while p[0] < arcsin(s/h): 
+    rate(1000)
+    rotate_gra(0)
+    scene.center = domino[0].pos
+while k < domino_number - 1:
+    scene.center = domino[k+1].pos
+    while j < k+1:
+        domino[k+1].v = energy_dec*domino[k].v
+        j += 1
+        
+    while p[k+1] < arcsin(s/h): 
+        rate(1000)
+        rotate_gra(k+1)
+        while m < k+1:
+            rotate_pas(k - m)
+            m += 1
+        m = 0
+    
+    k += 1       
